@@ -26,12 +26,53 @@
         .view.active { display: flex; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .header { background: var(--primary); color: white; padding: 20px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header h1 { font-size: 20px; font-weight: 700; flex-grow: 1; text-align: center; }
+        /* HEADER PADRÃO */
+        .header { background: var(--primary); color: white; padding: 20px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        .header h1 { font-size: 20px; font-weight: 700; flex-grow: 1; text-align: center; margin: 0; }
         .header-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
-        .header-spacer { width: 30px; }
+        
+        /* MODIFICADOR: HEADER COM IMAGEM (VIEW GRID) */
+        .header.has-bg {
+            height: 200px;
+            background-size: cover !important;
+            background-position: center !important;
+            align-items: flex-start; /* Joga os botões para cima */
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: relative;
+            padding-top: 20px;
+        }
+        .header.has-bg::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.8) 100%);
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            z-index: 1;
+        }
+        .header.has-bg > * { position: relative; z-index: 2; } /* Mantém botões acima da sombra */
+        .header.has-bg h1 {
+            position: absolute;
+            bottom: 25px;
+            left: 20px;
+            right: 20px;
+            text-align: left;
+            font-size: 26px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            line-height: 1.2;
+        }
 
         .container { padding: 20px; max-width: 500px; margin: 0 auto; width: 100%; flex-grow: 1; }
+        
+        /* OVERLAP CONTAINER (Faz o painel de status subir em cima da imagem) */
+        .view-grid-container { transition: all 0.3s ease; }
+        .view-grid-container.overlap {
+            margin-top: -45px;
+            position: relative;
+            z-index: 3;
+        }
 
         #caixinhas-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding-bottom: 80px; }
         
@@ -50,7 +91,7 @@
         .progress-container { background: #e0e0e0; border-radius: 8px; height: 6px; overflow: hidden; width: 100%; }
         .progress-bar { background: var(--success); height: 100%; width: 0%; border-radius: 8px; transition: width 0.4s ease; }
 
-        .fab { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 16px rgba(138, 5, 190, 0.4); border: none; cursor: pointer; z-index: 100; transition: transform 0.2s; }
+        .fab { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 16px rgba(138, 5, 190, 0.4); border: none; cursor: pointer; z-index: 100; transition: transform 0.2s; -webkit-tap-highlight-color: transparent; }
         .fab:active { transform: scale(0.9); }
 
         /* Form Views */
@@ -83,7 +124,7 @@
         .icon-opt.selected { opacity: 1; transform: scale(1.1); }
 
         /* Grid View & Layout Controls */
-        .stats-panel { background: white; padding: 20px; border-radius: 16px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .stats-panel { background: white; padding: 20px; border-radius: 16px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .stats-grid { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .stat-item { text-align: center; width: 48%; }
         .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
@@ -130,9 +171,9 @@
     <!-- HOME VIEW -->
     <div id="view-home" class="view active">
         <div class="header">
-            <div class="header-spacer"></div>
+            <div style="width: 30px;"></div>
             <h1>Minhas Caixinhas</h1>
-            <div class="header-spacer"></div>
+            <div style="width: 30px;"></div>
         </div>
         <div class="container" id="home-container">
             <div id="caixinhas-list"></div>
@@ -150,7 +191,7 @@
         <div class="header">
             <button class="header-btn" onclick="switchView('view-home')">←</button>
             <h1>Nova Caixinha</h1>
-            <div class="header-spacer"></div>
+            <div style="width: 30px;"></div>
         </div>
         <div class="container">
             <!-- Upload Foto -->
@@ -228,7 +269,7 @@
         <div class="header">
             <button class="header-btn" onclick="switchView('view-grid')">←</button>
             <h1>Editar Caixinha</h1>
-            <div class="header-spacer"></div>
+            <div style="width: 30px;"></div>
         </div>
         <div class="container">
             <div class="form-group">
@@ -257,13 +298,13 @@
 
     <!-- GRID VIEW -->
     <div id="view-grid" class="view">
-        <div class="header">
+        <div class="header" id="grid-header">
             <button class="header-btn" onclick="switchView('view-home')">←</button>
             <h1 id="grid-header-title">Objetivo</h1>
             <button class="header-btn" onclick="openEditView()" style="font-size: 18px;">✏️</button>
         </div>
         
-        <div class="container">
+        <div class="container view-grid-container" id="grid-view-container">
             <div class="stats-panel">
                 <div class="stats-grid">
                     <div class="stat-item">
@@ -307,13 +348,13 @@
     </div>
 
     <script>
-        let caixinhas = JSON.parse(localStorage.getItem('minhas_caixinhas_v8')) || [];
+        let caixinhas = JSON.parse(localStorage.getItem('minhas_caixinhas_v9')) || [];
         
-        // Mapear dados antigos da v7 para a v8
-        let oldCaixinhas = JSON.parse(localStorage.getItem('minhas_caixinhas_v7'));
+        // Mapear dados antigos da v8 para a v9
+        let oldCaixinhas = JSON.parse(localStorage.getItem('minhas_caixinhas_v8'));
         if (oldCaixinhas && caixinhas.length === 0) {
             caixinhas = oldCaixinhas;
-            localStorage.setItem('minhas_caixinhas_v8', JSON.stringify(caixinhas));
+            localStorage.setItem('minhas_caixinhas_v9', JSON.stringify(caixinhas));
         }
 
         let currentCaixinhaId = null;
@@ -547,7 +588,7 @@
 
         function saveData() {
             try {
-                localStorage.setItem('minhas_caixinhas_v8', JSON.stringify(caixinhas));
+                localStorage.setItem('minhas_caixinhas_v9', JSON.stringify(caixinhas));
             } catch (e) {
                 alert("Espaço de armazenamento cheio! A imagem escolhida pode ser muito grande.");
             }
@@ -605,9 +646,25 @@
             const cx = caixinhas.find(c => c.id === currentCaixinhaId);
             if (!cx) return switchView('view-home');
 
-            document.getElementById('grid-header-title').innerText = cx.icon + ' ' + cx.name;
-            const gridContainer = document.getElementById('grid-container');
-            gridContainer.innerHTML = '';
+            // HEADER DINÂMICO COM IMAGEM
+            const gridHeader = document.getElementById('grid-header');
+            const gridContainer = document.getElementById('grid-view-container');
+            const headerTitle = document.getElementById('grid-header-title');
+            
+            headerTitle.innerText = cx.icon + ' ' + cx.name;
+
+            if (cx.image) {
+                gridHeader.style.background = `url('${cx.image}')`;
+                gridHeader.classList.add('has-bg');
+                gridContainer.classList.add('overlap');
+            } else {
+                gridHeader.style.background = 'var(--primary)';
+                gridHeader.classList.remove('has-bg');
+                gridContainer.classList.remove('overlap');
+            }
+
+            const gridContent = document.getElementById('grid-container');
+            gridContent.innerHTML = '';
             
             let saved = 0;
 
@@ -625,7 +682,7 @@
                 
                 box.innerText = displayValue;
                 box.onclick = () => openActionModal(index, value, isChecked);
-                gridContainer.appendChild(box);
+                gridContent.appendChild(box);
             });
 
             document.getElementById('grid-saved').innerText = formatMoney(saved);
