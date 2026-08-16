@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minhas Caixinhas</title>
+    <meta name="theme-color" content="#8A05BE">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8A05BE;
+            --primary-dark: #610385;
+            --success: #00B94A;
+            --danger: #e74c3c;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #777777;
+            --grid-cols: 4;
+            --box-font: 18px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); -webkit-font-smoothing: antialiased; user-select: none; }
+        
+        .view { display: none; min-height: 100vh; flex-direction: column; }
+        .view.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .header { background: var(--primary); color: white; padding: 20px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 20px; font-weight: 700; flex-grow: 1; text-align: center; }
+        .header-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        .header-spacer { width: 30px; }
+
+        .container { padding: 20px; max-width: 500px; margin: 0 auto; width: 100%; flex-grow: 1; }
+
+        #caixinhas-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding-bottom: 80px; }
+        
+        .caixinha-card { background: var(--card-bg); border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); cursor: pointer; transition: transform 0.2s; display: flex; flex-direction: column; overflow: hidden; }
+        .caixinha-card:active { transform: scale(0.96); }
+        
+        .card-image-wrapper { height: 110px; width: 100%; background: linear-gradient(135deg, #a73fd1, #8A05BE); position: relative; overflow: hidden; }
+        .card-image { width: 100%; height: 100%; object-fit: cover; }
+        .card-icon-overlay { position: absolute; bottom: -15px; right: 10px; font-size: 35px; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        .card-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .card-title { font-weight: 700; font-size: 15px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-target { color: var(--primary); font-weight: 700; font-size: 13px; }
+        .card-progress-text { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
+        
+        .progress-container { background: #e0e0e0; border-radius: 8px; height: 6px; overflow: hidden; width: 100%; }
+        .progress-bar { background: var(--success); height: 100%; width: 0%; border-radius: 8px; transition: width 0.4s ease; }
+
+        .fab { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 16px rgba(138, 5, 190, 0.4); border: none; cursor: pointer; z-index: 100; transition: transform 0.2s; }
+        .fab:active { transform: scale(0.9); }
+
+        /* Form Views */
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-muted); font-size: 14px; }
+        .form-group input { width: 100%; padding: 16px; border: 2px solid #ddd; border-radius: 12px; font-size: 16px; transition: border-color 0.3s; outline: none; }
+        .form-group input:focus { border-color: var(--primary); }
+        
+        /* Modalidades de Economia */
+        .mode-selector { display: flex; gap: 10px; margin-top: 5px; }
+        .mode-card { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 12px; cursor: pointer; text-align: center; transition: 0.2s; background: var(--card-bg); -webkit-tap-highlight-color: transparent; }
+        .mode-card h4 { font-size: 14px; margin-bottom: 4px; color: var(--text-main); font-weight: 700; }
+        .mode-card p { font-size: 11px; color: var(--text-muted); line-height: 1.2; }
+        .mode-card.active { border-color: var(--primary); background: rgba(138, 5, 190, 0.05); }
+        .mode-card.active h4 { color: var(--primary); }
+
+        /* Image Upload Styles */
+        .image-upload-container { width: 100%; height: 140px; border: 2px dashed #ccc; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; overflow: hidden; position: relative; background: #fafafa; transition: border-color 0.2s; }
+        .image-upload-container:active { background: #f0f0f0; }
+        .image-upload-container.has-image { border-style: solid; border-color: var(--primary); }
+        .upload-preview { position: absolute; width: 100%; height: 100%; object-fit: cover; display: none; }
+        .upload-placeholder { color: var(--text-muted); text-align: center; font-size: 14px; z-index: 2; pointer-events: none; }
+        .upload-placeholder span { font-size: 30px; display: block; margin-bottom: 5px; }
+
+        .btn-block { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(138, 5, 190, 0.3); transition: background 0.2s; }
+        .btn-block:active { background: var(--primary-dark); transform: scale(0.98); }
+        
+        .icon-selector { display: flex; gap: 12px; margin-top: 10px; font-size: 28px; overflow-x: auto; padding-bottom: 10px; }
+        .icon-opt { cursor: pointer; opacity: 0.4; transition: opacity 0.2s; }
+        .icon-opt.selected { opacity: 1; transform: scale(1.1); }
+
+        /* Grid View & Layout Controls */
+        .stats-panel { background: white; padding: 20px; border-radius: 16px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .stats-grid { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .stat-item { text-align: center; width: 48%; }
+        .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+        .stat-value { font-size: 18px; font-weight: 700; color: var(--primary); }
+        
+        .layout-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 15px; }
+        .layout-controls label { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-right: 4px; }
+        .layout-btn { width: 34px; height: 34px; border-radius: 8px; border: 2px solid #e0e0e0; background: var(--card-bg); color: var(--text-muted); font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+        .layout-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
+
+        .grid { display: grid; grid-template-columns: repeat(var(--grid-cols), 1fr); gap: 10px; margin-bottom: 80px; }
+        .box { background: var(--card-bg); border: 2px solid #e0e0e0; border-radius: 12px; aspect-ratio: 1 / 1; max-height: 90px; display: flex; align-items: center; justify-content: center; font-size: var(--box-font); font-weight: 700; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; position: relative; -webkit-tap-highlight-color: transparent; text-align: center; line-height: 1.1; }
+        .box:active { transform: scale(0.9); }
+        .box.checked::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M 18 15 C 40 40 60 70 82 85' stroke='%23ff1a1a' stroke-width='7' stroke-linecap='round' fill='none' /%3E%3Cpath d='M 85 18 C 65 35 35 70 15 88' stroke='%23ff1a1a' stroke-width='7' stroke-linecap='round' fill='none' /%3E%3C/svg%3E"); background-size: 85%; background-position: center; background-repeat: no-repeat; opacity: 0.85; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+        .box.checked { border-color: #d0d0d0; color: #b0b0b0; }
+
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 0.85; } }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(4px); }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal { background: white; width: 85%; max-width: 340px; border-radius: 24px; padding: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active .modal { transform: scale(1); }
+        
+        .modal-icon { font-size: 45px; margin-bottom: 12px; }
+        .modal h2 { font-size: 22px; margin-bottom: 8px; color: var(--text-main); font-weight: 700; }
+        .modal p { font-size: 15px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+        
+        .modal-actions { display: flex; gap: 12px; flex-direction: column; }
+        .btn-modal { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+        .btn-confirm { background: var(--primary); color: white; }
+        .btn-confirm.remove { background: var(--danger); }
+        .btn-cancel { background: #f0f0f0; color: var(--text-muted); }
+
+        .delete-btn { display: block; width: 100%; text-align: center; color: var(--danger); background: none; border: none; padding: 15px; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 20px; }
+        
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); grid-column: span 2; }
+        .empty-state div { font-size: 60px; margin-bottom: 20px; }
+        .empty-state h3 { font-size: 20px; color: var(--text-main); margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- HOME VIEW -->
+    <div id="view-home" class="view active">
+        <div class="header">
+            <div class="header-spacer"></div>
+            <h1>Minhas Caixinhas</h1>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="container" id="home-container">
+            <div id="caixinhas-list"></div>
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div>📦</div>
+                <h3>Nenhuma caixinha</h3>
+                <p>Crie sua primeira caixinha para começar a guardar dinheiro e realizar seus sonhos!</p>
+            </div>
+        </div>
+        <button class="fab" onclick="switchView('view-create')">+</button>
+    </div>
+
+    <!-- CREATE VIEW -->
+    <div id="view-create" class="view">
+        <div class="header">
+            <button class="header-btn" onclick="switchView('view-home')">←</button>
+            <h1>Nova Caixinha</h1>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="container">
+            <!-- Upload Foto -->
+            <div class="form-group">
+                <label>Foto da Caixinha (Opcional)</label>
+                <div class="image-upload-container" onclick="document.getElementById('input-image-create').click()">
+                    <img id="preview-create" class="upload-preview" src="">
+                    <div class="upload-placeholder" id="placeholder-create">
+                        <span>📷</span>
+                        Toque para escolher
+                    </div>
+                </div>
+                <input type="file" id="input-image-create" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'preview-create', 'placeholder-create', 'create')">
+            </div>
+
+            <div class="form-group">
+                <label>Qual o seu objetivo?</label>
+                <input type="text" id="input-name" placeholder="Ex: PS5, Carro Novo, Reserva...">
+                <div class="icon-selector">
+                    <span class="icon-opt selected" onclick="selectIcon(this, 'create')">✈️</span>
+                    <span class="icon-opt" onclick="selectIcon(this, 'create')">🚗</span>
+                    <span class="icon-opt" onclick="selectIcon(this, 'create')">🏠</span>
+                    <span class="icon-opt" onclick="selectIcon(this, 'create')">📱</span>
+                    <span class="icon-opt" onclick="selectIcon(this, 'create')">🎮</span>
+                    <span class="icon-opt" onclick="selectIcon(this, 'create')">🐷</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Valor Total (R$)</label>
+                <input type="number" id="input-target" placeholder="Ex: 50000" inputmode="numeric">
+            </div>
+
+            <div class="form-group">
+                <label>Já tem algum valor guardado para isso?</label>
+                <input type="number" id="input-saved" placeholder="Ex: 5000" inputmode="numeric">
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">*Os quadradinhos serão riscados automaticamente até bater esse valor!</p>
+            </div>
+
+            <!-- Modalidades -->
+            <div class="form-group">
+                <label>Modalidade da Cartela</label>
+                <div class="mode-selector">
+                    <div id="mode-classic" class="mode-card active" onclick="setMode('classic')">
+                        <h4>Clássica</h4>
+                        <p>1, 2, 3...</p>
+                    </div>
+                    <div id="mode-accelerated" class="mode-card" onclick="setMode('accelerated')">
+                        <h4>Passos</h4>
+                        <p>De X em X</p>
+                    </div>
+                    <div id="mode-fixed" class="mode-card" onclick="setMode('fixed')">
+                        <h4>Fixa</h4>
+                        <p>Qtd exata</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" id="group-accelerated" style="display:none;">
+                <label>Aumentar de quanto em quanto? (R$)</label>
+                <input type="number" id="input-step" placeholder="Ex: 50 (Gera 50, 100, 150...)" inputmode="numeric">
+            </div>
+
+            <div class="form-group" id="group-fixed" style="display:none;">
+                <label>Quer atingir a meta em quantos depósitos?</label>
+                <input type="number" id="input-qty" placeholder="Ex: 48 (Gera parcelas iguais)" inputmode="numeric">
+            </div>
+            
+            <button class="btn-block" onclick="createCaixinha()">Criar Caixinha</button>
+        </div>
+    </div>
+
+    <!-- EDIT VIEW -->
+    <div id="view-edit" class="view">
+        <div class="header">
+            <button class="header-btn" onclick="switchView('view-grid')">←</button>
+            <h1>Editar Caixinha</h1>
+            <div class="header-spacer"></div>
+        </div>
+        <div class="container">
+            <div class="form-group">
+                <label>Alterar Foto</label>
+                <div class="image-upload-container" onclick="document.getElementById('input-image-edit').click()">
+                    <img id="preview-edit" class="upload-preview" src="">
+                    <div class="upload-placeholder" id="placeholder-edit">
+                        <span>📷</span>
+                        Toque para alterar
+                    </div>
+                </div>
+                <input type="file" id="input-image-edit" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'preview-edit', 'placeholder-edit', 'edit')">
+            </div>
+
+            <div class="form-group">
+                <label>Alterar Nome</label>
+                <input type="text" id="input-name-edit" placeholder="Nome da Caixinha">
+                <div class="icon-selector" id="icon-selector-edit">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+            
+            <button class="btn-block" onclick="saveEditCaixinha()">Salvar Alterações</button>
+        </div>
+    </div>
+
+    <!-- GRID VIEW -->
+    <div id="view-grid" class="view">
+        <div class="header">
+            <button class="header-btn" onclick="switchView('view-home')">←</button>
+            <h1 id="grid-header-title">Objetivo</h1>
+            <button class="header-btn" onclick="openEditView()" style="font-size: 18px;">✏️</button>
+        </div>
+        
+        <div class="container">
+            <div class="stats-panel">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Guardado</div>
+                        <div class="stat-value" id="grid-saved">R$ 0,00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Falta</div>
+                        <div class="stat-value" id="grid-remaining" style="color: var(--text-main);">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="grid-progress"></div>
+                </div>
+            </div>
+            
+            <div class="layout-controls">
+                <label>Colunas:</label>
+                <button class="layout-btn" id="btn-layout-3" onclick="setLayout(3)">3</button>
+                <button class="layout-btn" id="btn-layout-4" onclick="setLayout(4)">4</button>
+                <button class="layout-btn" id="btn-layout-5" onclick="setLayout(5)">5</button>
+                <button class="layout-btn" id="btn-layout-6" onclick="setLayout(6)">6</button>
+            </div>
+            
+            <div class="grid" id="grid-container"></div>
+            <button class="delete-btn" onclick="promptDeleteCaixinha()">Excluir esta caixinha</button>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-icon" id="modal-icon">💵</div>
+            <h2 id="modal-title">Confirmação</h2>
+            <p id="modal-text">Mensagem</p>
+            <div class="modal-actions">
+                <button class="btn-modal btn-confirm" id="btn-confirm" onclick="confirmAction()">Sim!</button>
+                <button class="btn-modal btn-cancel" onclick="closeModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let caixinhas = JSON.parse(localStorage.getItem('minhas_caixinhas_v8')) || [];
+        
+        // Mapear dados antigos da v7 para a v8
+        let oldCaixinhas = JSON.parse(localStorage.getItem('minhas_caixinhas_v7'));
+        if (oldCaixinhas && caixinhas.length === 0) {
+            caixinhas = oldCaixinhas;
+            localStorage.setItem('minhas_caixinhas_v8', JSON.stringify(caixinhas));
+        }
+
+        let currentCaixinhaId = null;
+        let pendingAction = null;
+        let currentMode = 'classic';
+        
+        let selectedIconCreate = "✈️";
+        let selectedIconEdit = "✈️";
+        const availableIcons = ["✈️", "🚗", "🏠", "📱", "🎮", "🐷", "🎓", "💸"];
+
+        let currentUploadedImage = null;
+        let currentUploadedImageEdit = null;
+
+        const modal = document.getElementById('modal');
+        const formatMoney = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const vibrate = (ms = 50) => { if (navigator.vibrate) navigator.vibrate(ms); };
+
+        // ==================== UI MODE SWITCH ====================
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-card').forEach(el => el.classList.remove('active'));
+            document.getElementById('mode-' + mode).classList.add('active');
+            
+            document.getElementById('group-accelerated').style.display = mode === 'accelerated' ? 'block' : 'none';
+            document.getElementById('group-fixed').style.display = mode === 'fixed' ? 'block' : 'none';
+        }
+
+        // ==================== IMAGE COMPRESSION ====================
+        function handleImageUpload(event, previewId, placeholderId, mode) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 400; 
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                    } else {
+                        if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    const preview = document.getElementById(previewId);
+                    preview.src = dataUrl;
+                    preview.style.display = 'block';
+                    document.getElementById(placeholderId).style.display = 'none';
+                    preview.parentElement.classList.add('has-image');
+
+                    if(mode === 'create') currentUploadedImage = dataUrl;
+                    if(mode === 'edit') currentUploadedImageEdit = dataUrl;
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== LAYOUT SYSTEM ====================
+        function initLayout() {
+            const savedCols = localStorage.getItem('grid_layout_cols') || 4;
+            setLayout(savedCols);
+        }
+
+        function setLayout(cols) {
+            localStorage.setItem('grid_layout_cols', cols);
+            document.documentElement.style.setProperty('--grid-cols', cols);
+            
+            let fontSize = "18px";
+            if(cols == 3) fontSize = "22px";
+            if(cols == 5) fontSize = "15px";
+            if(cols == 6) fontSize = "13px";
+            document.documentElement.style.setProperty('--box-font', fontSize);
+
+            document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById('btn-layout-' + cols);
+            if(activeBtn) activeBtn.classList.add('active');
+        }
+
+        // ==================== AUDIO ====================
+        let audioCtx;
+        function playCoinDropSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const t = audioCtx.currentTime;
+                function ping(time, freq, duration, vol) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, time);
+                    osc.frequency.exponentialRampToValueAtTime(freq * 1.1, time + duration); 
+                    gain.gain.setValueAtTime(0, time);
+                    gain.gain.linearRampToValueAtTime(vol, time + duration * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(time);
+                    osc.stop(time + duration);
+                }
+                ping(t, 2500, 0.12, 0.6);        
+                ping(t + 0.12, 2600, 0.08, 0.3); 
+                ping(t + 0.20, 2650, 0.05, 0.15);
+                ping(t + 0.25, 2700, 0.03, 0.05);
+            } catch (e) {}
+        }
+
+        // ==================== NAVIGATION ====================
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0, 0);
+            
+            if (viewId === 'view-home') renderHome();
+            if (viewId === 'view-create') resetCreateForm();
+        }
+
+        function resetCreateForm() {
+            document.getElementById('input-name').value = '';
+            document.getElementById('input-target').value = '';
+            document.getElementById('input-saved').value = '';
+            document.getElementById('input-step').value = '';
+            document.getElementById('input-qty').value = '';
+            setMode('classic');
+            
+            currentUploadedImage = null;
+            document.getElementById('preview-create').style.display = 'none';
+            document.getElementById('placeholder-create').style.display = 'block';
+            document.getElementById('preview-create').parentElement.classList.remove('has-image');
+        }
+
+        function selectIcon(element, mode) {
+            const container = element.parentElement;
+            container.querySelectorAll('.icon-opt').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            if(mode === 'create') selectedIconCreate = element.innerText;
+            if(mode === 'edit') selectedIconEdit = element.innerText;
+        }
+
+        // ==================== CORE MATH & GENERATION ====================
+        function generateBoxes(target, mode) {
+            let boxes = [];
+            let sum = 0;
+
+            if (mode === 'classic' || mode === 'accelerated') {
+                let step = 1;
+                if (mode === 'accelerated') {
+                    step = parseInt(document.getElementById('input-step').value);
+                    if (isNaN(step) || step <= 0) step = 10; 
+                }
+                
+                let currentBox = step;
+                while (sum + currentBox <= target) { 
+                    boxes.push(currentBox); 
+                    sum += currentBox; 
+                    currentBox += step; 
+                }
+                
+                let remainder = target - sum;
+                if (remainder > 0) {
+                    if (boxes.length > 0) boxes[boxes.length - 1] += remainder;
+                    else boxes.push(remainder);
+                }
+            } 
+            else if (mode === 'fixed') {
+                let qty = parseInt(document.getElementById('input-qty').value);
+                if (isNaN(qty) || qty <= 0) qty = 10; 
+                
+                let baseValue = Math.floor(target / qty);
+                let remainder = target - (baseValue * qty);
+                
+                for(let i = 0; i < qty; i++) {
+                    if (i === qty - 1) boxes.push(baseValue + remainder);
+                    else boxes.push(baseValue);
+                }
+            }
+            return boxes;
+        }
+
+        function createCaixinha() {
+            const name = document.getElementById('input-name').value.trim();
+            const target = parseInt(document.getElementById('input-target').value);
+            const alreadySaved = parseInt(document.getElementById('input-saved').value) || 0;
+
+            if (!name || isNaN(target) || target <= 0) {
+                alert("Preencha um nome e o Valor Total corretamente.");
+                return;
+            }
+            if (alreadySaved >= target) {
+                alert("O valor já guardado não pode ser maior ou igual à sua meta total.");
+                return;
+            }
+
+            const boxes = generateBoxes(target, currentMode);
+            
+            let checkedIndexes = [];
+            let savedToDistribute = alreadySaved;
+            
+            boxes.forEach((boxValue, index) => {
+                if (savedToDistribute >= boxValue) {
+                    checkedIndexes.push(index);
+                    savedToDistribute -= boxValue;
+                }
+            });
+
+            const novaCaixinha = {
+                id: Date.now().toString(),
+                name: name,
+                icon: selectedIconCreate,
+                target: target,
+                image: currentUploadedImage, 
+                boxes: boxes,
+                checked: checkedIndexes
+            };
+
+            caixinhas.push(novaCaixinha);
+            saveData();
+            switchView('view-home');
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('minhas_caixinhas_v8', JSON.stringify(caixinhas));
+            } catch (e) {
+                alert("Espaço de armazenamento cheio! A imagem escolhida pode ser muito grande.");
+            }
+        }
+
+        function renderHome() {
+            const listContainer = document.getElementById('caixinhas-list');
+            const emptyState = document.getElementById('empty-state');
+            
+            listContainer.innerHTML = '';
+            if (caixinhas.length === 0) { emptyState.style.display = 'block'; return; }
+            emptyState.style.display = 'none';
+
+            caixinhas.forEach(cx => {
+                let saved = cx.checked.reduce((acc, index) => acc + cx.boxes[index], 0);
+                let percentage = (saved / cx.target) * 100;
+                
+                let imgHtml = '';
+                if (cx.image) {
+                    imgHtml = `<img src="${cx.image}" class="card-image">`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'caixinha-card';
+                card.onclick = () => openCaixinha(cx.id);
+                
+                card.innerHTML = `
+                    <div class="card-image-wrapper">
+                        ${imgHtml}
+                        <div class="card-icon-overlay">${cx.icon}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">${cx.name}</div>
+                        <div class="card-target">${formatMoney(cx.target)}</div>
+                        <div class="card-progress-text">
+                            <span>${formatMoney(saved)}</span>
+                            <span>${percentage.toFixed(1)}%</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        function openCaixinha(id) {
+            currentCaixinhaId = id;
+            switchView('view-grid');
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const cx = caixinhas.find(c => c.id === currentCaixinhaId);
+            if (!cx) return switchView('view-home');
+
+            document.getElementById('grid-header-title').innerText = cx.icon + ' ' + cx.name;
+            const gridContainer = document.getElementById('grid-container');
+            gridContainer.innerHTML = '';
+            
+            let saved = 0;
+
+            cx.boxes.forEach((value, index) => {
+                const isChecked = cx.checked.includes(index);
+                if (isChecked) saved += value;
+
+                const box = document.createElement('div');
+                box.className = `box ${isChecked ? 'checked' : ''}`;
+                
+                let displayValue = value;
+                if (value >= 1000) {
+                    displayValue = value >= 10000 ? (value/1000).toFixed(1) + 'k' : value.toLocaleString('pt-BR');
+                }
+                
+                box.innerText = displayValue;
+                box.onclick = () => openActionModal(index, value, isChecked);
+                gridContainer.appendChild(box);
+            });
+
+            document.getElementById('grid-saved').innerText = formatMoney(saved);
+            document.getElementById('grid-remaining').innerText = formatMoney(cx.target - saved);
+            
+            const percentage = (saved / cx.target) * 100;
+            document.getElementById('grid-progress').style.width = `${percentage}%`;
+        }
+
+        // ==================== EDIT FEATURE ====================
+        function openEditView() {
+            const cx = caixinhas.find(c => c.id === currentCaixinhaId);
+            if (!cx) return;
+
+            document.getElementById('input-name-edit').value = cx.name;
+            selectedIconEdit = cx.icon;
+
+            const iconContainer = document.getElementById('icon-selector-edit');
+            iconContainer.innerHTML = availableIcons.map(icon => 
+                `<span class="icon-opt ${icon === cx.icon ? 'selected' : ''}" onclick="selectIcon(this, 'edit')">${icon}</span>`
+            ).join('');
+
+            currentUploadedImageEdit = cx.image || null;
+            const preview = document.getElementById('preview-edit');
+            const placeholder = document.getElementById('placeholder-edit');
+            if (cx.image) {
+                preview.src = cx.image;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                preview.parentElement.classList.add('has-image');
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+                placeholder.style.display = 'block';
+                preview.parentElement.classList.remove('has-image');
+            }
+
+            switchView('view-edit');
+        }
+
+        function saveEditCaixinha() {
+            const cx = caixinhas.find(c => c.id === currentCaixinhaId);
+            const newName = document.getElementById('input-name-edit').value.trim();
+            
+            if (newName) cx.name = newName;
+            cx.icon = selectedIconEdit;
+            cx.image = currentUploadedImageEdit;
+
+            saveData();
+            switchView('view-grid');
+            renderGrid();
+        }
+
+        // ==================== MODAL ACTIONS ====================
+        function openActionModal(boxIndex, value, isChecked) {
+            vibrate(30);
+            pendingAction = { boxIndex, isChecked };
+            const icon = document.getElementById('modal-icon');
+            const title = document.getElementById('modal-title');
+            const text = document.getElementById('modal-text');
+            const btn = document.getElementById('btn-confirm');
+
+            if (isChecked) {
+                icon.textContent = "🔄";
+                title.textContent = "Desfazer depósito?";
+                text.innerHTML = `Quer desmarcar o valor de <strong>R$ ${value.toLocaleString('pt-BR')}</strong> desta caixinha?`;
+                btn.textContent = "Sim, desmarcar";
+                btn.className = "btn-modal btn-confirm remove";
+            } else {
+                icon.textContent = "💸";
+                title.textContent = "Confirmar depósito";
+                text.innerHTML = `Já guardou o dinheiro? Confirmar depósito de <strong>R$ ${value.toLocaleString('pt-BR')}</strong>?`;
+                btn.textContent = "Sim, guardei!";
+                btn.className = "btn-modal btn-confirm";
+            }
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            pendingAction = null;
+        }
+
+        function confirmAction() {
+            if (!pendingAction || !currentCaixinhaId) return;
+            const cx = caixinhas.find(c => c.id === currentCaixinhaId);
+            const { boxIndex, isChecked } = pendingAction;
+            
+            if (isChecked) {
+                cx.checked = cx.checked.filter(idx => idx !== boxIndex);
+                vibrate(30);
+            } else {
+                cx.checked.push(boxIndex);
+                playCoinDropSound(); 
+                vibrate([40, 30, 20]); 
+            }
+            saveData();
+            renderGrid();
+            closeModal();
+        }
+
+        function promptDeleteCaixinha() {
+            vibrate(30);
+            pendingAction = { action: 'delete' };
+            document.getElementById('modal-icon').textContent = "⚠️";
+            document.getElementById('modal-title').textContent = "Excluir Caixinha?";
+            document.getElementById('modal-text').innerHTML = `Você perderá o histórico de marcações. O dinheiro já depositado continua no seu banco, apenas excluiremos essa meta do app.`;
+            const btn = document.getElementById('btn-confirm');
+            btn.textContent = "Sim, excluir";
+            btn.className = "btn-modal btn-confirm remove";
+            modal.classList.add('active');
+        }
+
+        const originalConfirmAction = confirmAction;
+        confirmAction = function() {
+            if (pendingAction && pendingAction.action === 'delete') {
+                caixinhas = caixinhas.filter(c => c.id !== currentCaixinhaId);
+                saveData();
+                closeModal();
+                switchView('view-home');
+                return;
+            }
+            originalConfirmAction();
+        }
+
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        initLayout();
+        renderHome();
+    </script>
+</body>
+</html>
